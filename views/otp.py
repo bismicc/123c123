@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 browser = None
 page = None
 playwright = None
+context = None
 credential_data = None
 
 async def automate_password_reset(email):  # Just Sends Code
@@ -70,7 +71,7 @@ async def automate_password_reset(email):  # Just Sends Code
         if "https://login.live.com/GetCredentialType.srf" in response.url:
             try:
                 response_text = await response.text()
-                response_json = json.loads(response.text)
+                response_json = json.loads(response_text)
                 proofs = response_json.get("Credentials", {}).get("OtcLoginEligibleProofs", [])
                 if proofs and "data" in proofs[0]:
                     credential_data = proofs[0]["data"]

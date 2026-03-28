@@ -19,7 +19,7 @@ context = None
 credential_data = None
 
 async def automate_password_reset(email):  # Just Sends Code
-    global browser, page, playwright, credential_data
+    global browser, page, playwright, credential_data, context
     config.AUTHVALUE = ""
     config.EMAIL_REENTER = False  # Reset the flag at the start
     config.MASKED_EMAIL = ""  # Reset the masked email
@@ -32,6 +32,8 @@ async def automate_password_reset(email):  # Just Sends Code
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     )
     page = await context.new_page()
+else:
+    context = page.context
 
     # Virtual authenticator: fires immediately but fails user verification
     # This makes Microsoft's passkey attempt resolve instantly and fall through

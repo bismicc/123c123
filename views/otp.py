@@ -72,18 +72,21 @@ async def automate_password_reset(email, user_id):
     }
     sessions[user_id] = session
 
-    cdp = await context.new_cdp_session(page)
-    await cdp.send("WebAuthn.enable", {"enableUI": False})
-    await cdp.send("WebAuthn.addVirtualAuthenticator", {
-        "options": {
-            "protocol": "ctap2",
-            "transport": "internal",
-            "hasResidentKey": True,
-            "hasUserVerification": True,
-            "isUserVerified": False,
-            "automaticPresenceSimulation": True,
-        }
-    })
+    try:
+        cdp = await context.new_cdp_session(page)
+        await cdp.send("WebAuthn.enable", {"enableUI": False})
+        await cdp.send("WebAuthn.addVirtualAuthenticator", {
+            "options": {
+                "protocol": "ctap2",
+                "transport": "internal",
+                "hasResidentKey": True,
+                "hasUserVerification": True,
+                "isUserVerified": False,
+                "automaticPresenceSimulation": True,
+            }
+        })
+    except Exception as e:
+        print(f"[WARN] Could not set up virtual authenticator (may already exist): {e}")
 
     async def log_request(route, request):
         print(f"Intercepted request URL: {request.url}")

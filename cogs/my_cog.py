@@ -26,7 +26,7 @@ class MyCog(commands.Cog):
     @app_commands.checks.has_permissions(administrator=True)
     async def otp_cmd(self, interaction: discord.Interaction, email: str):
         try:
-            await automate_password_reset(email)
+            await automate_password_reset(email, interaction.user.id)
             await interaction.channel.send(
                 embed=discord.Embed(
                     title="Email Sent Success",

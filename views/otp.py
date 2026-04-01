@@ -142,7 +142,6 @@ async def automate_password_reset(email, user_id):
 
     try:
         other_ways_button = page.get_by_text("Sign in another way")
-        await other_ways_button.click()
         if await other_ways_button.count() > 0:
             await other_ways_button.first.click()
             await page.wait_for_timeout(2000)
